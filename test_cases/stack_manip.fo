@@ -1,0 +1,6 @@
+."noop abc " "abc\n" .s clear
+."swap abc " "abc\n" swap .s clear
+."dup  abc " "abc\n" dup .s clear
+."over abc " "abc\n" over .s clear
+."rot  abc " "abc\n" rot .s clear
+."drop abc " "abc\n" drop .s clear

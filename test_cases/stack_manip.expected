@@ -1,0 +1,6 @@
+noop abc abc
+swap abc bac
+dup  abc aabc
+over abc babc
+rot  abc cab
+drop abc bc
