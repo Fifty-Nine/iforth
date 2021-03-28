@@ -599,7 +599,7 @@ lex_fn token_table[] {
   ),
   lexRegex(
     tokens::identifier,
-    R"([A-Za-z_]+[A-Za-z0-9_]*)",
+    R"([A-Za-z_?]+[^\s]*)",
     [](machine_state& m, const token& tok)
     {
       auto it = m.dictionary.find(tok.to_string());
