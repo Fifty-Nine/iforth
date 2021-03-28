@@ -39,7 +39,7 @@ foo ( -- R:foo+1 ) Call the subroutine named 'foo'. The address of
                    the next instruction is pushed onto the return
                    stack.
 
-exi     (R:ra -- ) Pop the return stack and jump to the address. Note
+exit    (R:ra -- ) Pop the return stack and jump to the address. Note
                    that subroutines implicitly do this when the end
                    of the subroutine is reached.
 
