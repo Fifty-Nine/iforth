@@ -152,25 +152,29 @@ struct machine_state
     dstack.push_back(n);
   }
 
+  static void print_stack(std::ostream& out, const std::deque<int>& s)
+  {
+    out << "[";
+    for (int i = s.size() - 1; i >= 0; --i) {
+      out << i << ":" << s[i] << (i == 0 ? "]\n" : " ");
+    }
+  }
+
   void debug(std::ostream& out) const
   {
     out << "========= machine state =========\n";
-    out << "stack:\n[";
-    for (auto n : dstack) {
-      out << n << " ";
-    }
     out << "]\n\ntoken stream:\n";
-    for (auto t : token_stream) {
-      out << "[" << t << "] ";
+    for (auto i = 0; i < (int)token_stream.size(); ++i) {
+      out << i << ":[" << token_stream[i] << "] ";
     }
-    out << "\n\ncurr_token idx: " << (curr_token - token_stream.begin())
-        << "\n";
-    out << "link stack:\n[";
-
-    for (auto l : lstack) {
-      out << (l - token_stream.begin()) << " ";
-    }
-    out << "]\n=================================";
+    out << "data stack:\n";
+    print_stack(out, dstack);
+    out << "\nreturn stack:\n";
+    print_stack(out, rstack);
+    out << "\nip: " << ip() << " "
+        << (atEnd() ? std::string { "\n"}
+                    : ("(" + curr_token->to_string() + ")\n"));
+    out << "=================================";
     out << std::endl;
   }
 
@@ -239,6 +243,65 @@ struct machine_state
     return true;
   }
 
+  int rpop()
+  {
+    if (rstack.empty()) {
+      error() << "tried to pop from empty return stack";
+    }
+    auto result = rstack.back();
+    rstack.pop_back();
+    return result;
+  }
+
+  bool rpop(int& out)
+  {
+    if (rstack.empty()) {
+      return false;
+    }
+    out = rpop();
+    return true;
+  }
+
+  void rpush(int v) {
+    rstack.push_back(v);
+  }
+
+  void rpush(token_iterator it) {
+    rpush(addr(it));
+  }
+
+  void rpush() {
+    rpush(ip());
+  }
+
+  int addr(token_iterator it) const {
+    return it - token_stream.begin();
+  }
+
+  int ip() const
+  {
+    return addr(curr_token);
+  }
+
+  int end_addr() const
+  {
+    return (int)token_stream.size();
+  }
+
+  token_iterator abs_inst(int addr)
+  {
+    return
+      (addr >= 0 && addr < end_addr()) ? token_stream.begin() + addr :
+      (addr < 0)                       ? token_stream.begin()        :
+                                         token_stream.end();
+
+  }
+
+  token_iterator rel_inst(int off)
+  {
+    return abs_inst(ip() + off);
+  }
+
   int top()
   {
     if (dstack.empty()) {
@@ -247,31 +310,14 @@ struct machine_state
     return dstack.back();
   }
 
-  void branch(int n)
+  void rbranch(int off)
   {
-    while (n > 0 && !atEnd()) {
-      ++curr_token;
-      --n;
-    }
-    while (n < 0 && curr_token != token_stream.begin()) {
-      --curr_token;
-      ++n;
-    }
-
-    if (n) {
-      error() << "tried to branch past the " << (n > 0 ? "end" : "start")
-              << " of the input.";
-    }
+    curr_token = rel_inst(off);
   }
 
-  void branch()
+  void abranch(int addr)
   {
-      next();
-      if (atEnd() || curr_token->kind != tokens::number) {
-        error() << "expected number after branch";
-      }
-      auto n = strtol(curr_token->start, nullptr, 0);
-      branch(n);
+    curr_token = abs_inst(addr);
   }
 
   bool branchTo(std::function<bool(const token&)> pred) {
@@ -298,11 +344,7 @@ struct machine_state
     return curr_token == token_stream.end();
   }
 
-  void next() {
-    if (!atEnd()) {
-      ++curr_token;
-    }
-  }
+  void next() { rbranch(1); }
 
   int run()
   {
@@ -316,7 +358,7 @@ struct machine_state
 
   std::map<std::string, token_iterator> dictionary;
   std::deque<int> dstack;
-  std::deque<token_iterator> lstack;
+  std::deque<int> rstack;
   std::vector<token> token_stream;
   token_iterator curr_token;
 };
@@ -520,12 +562,12 @@ lex_fn token_table[] {
     ';',
     [](machine_state& m, const token& tok)
     {
-      if (m.lstack.empty()) {
+      int rip;
+      if (!m.rpop(rip)) {
         m.error() << "encountered end-of-definition with no corresponding "
                   << "start-of-definition.";
       }
-      m.curr_token = m.lstack.back();
-      m.lstack.pop_back();
+      m.abranch(rip);
     }
   ),
   lexRegex(
@@ -569,7 +611,7 @@ lex_fn token_table[] {
       }
 
       m.next();
-      m.lstack.push_back(m.curr_token);
+      m.rpush();
       m.curr_token = it->second;
     }
   ),
