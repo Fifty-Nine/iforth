@@ -99,3 +99,10 @@ if [true]
 then          ( c -- ) Pop a value from the stack. If the value is nonzero,
                        branch to 'true' and proceed from 'then'. Otherwise,
                        proceed directly to 'then'.
+
+
+Potentially useful subroutines
+===================================================================
+: 2dup over over ; ( a b -- a b a b ) Duplicate the top 2 items on
+                                      the stack.
+

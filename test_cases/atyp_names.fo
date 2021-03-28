@@ -1,3 +1,4 @@
 : ?test    ."good\n" ;
 : test!@#$ ."good\n" ;
-?test test!@#$
+: 2test    ."good\n" ;
+?test test!@#$ 2test

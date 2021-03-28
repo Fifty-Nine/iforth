@@ -102,7 +102,7 @@ lex_fn lexRegex(
     token_kind kind, const std::string& re_text, interp_fn interp = &noop)
 {
   return [
-    re = std::regex { "^" + re_text },
+    re = std::regex { "^" + re_text + "(?=(\\s|$))"},
     kind,
     interp
   ](const char *begin, const char *end) -> token_opt
