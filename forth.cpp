@@ -477,7 +477,7 @@ lex_fn token_table[] {
   ),
   lexRegex(
     tokens::operation,
-    R"([+\-*/%&|!<>=])",
+    R"([-+*/%&|!<>=])",
     &interpOperation
   ),
   lexRegex(
