@@ -155,19 +155,20 @@ struct machine_state
   static void print_stack(std::ostream& out, const std::deque<int>& s)
   {
     out << "[";
-    for (int i = s.size() - 1; i >= 0; --i) {
-      out << i << ":" << s[i] << (i == 0 ? "]\n" : " ");
+    for (size_t i = 0; i < s.size(); ++i) {
+      auto idx = s.size() - i - 1;
+      out << idx << ":" << s[i] << (idx == 0 ? "]\n" : " ");
     }
   }
 
   void debug(std::ostream& out) const
   {
     out << "========= machine state =========\n";
-    out << "]\n\ntoken stream:\n";
+    out << "token stream:\n";
     for (auto i = 0; i < (int)token_stream.size(); ++i) {
       out << i << ":[" << token_stream[i] << "] ";
     }
-    out << "data stack:\n";
+    out << "\n\ndata stack:\n";
     print_stack(out, dstack);
     out << "\nreturn stack:\n";
     print_stack(out, rstack);
@@ -572,12 +573,16 @@ lex_fn token_table[] {
   ),
   lexRegex(
     tokens::print,
-    R"(\.(s|"[^"]*")?)",
+    R"(\.([sd]|"[^"]*")?)",
     [](machine_state& m, const token& tok)
     {
       if ((tok.end - tok.start) > 1) {
         if (*(tok.start + 1) == '"') {
           interpString(m, tok.start + 1, tok.end);
+        } else if (*(tok.start + 1) == 'd') {
+          m.debug(std::cout);
+          m.next();
+          return;
         }
         while (true) {
           int c;
