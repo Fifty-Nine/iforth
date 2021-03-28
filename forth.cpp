@@ -21,7 +21,8 @@ enum class tokens {
   identifier,
   number,
   string,
-  last_token = string
+  label,
+  last_token = label,
 };
 using token_kind = tokens;
 constexpr size_t num_token_kinds = (size_t)tokens::last_token + 1;
@@ -144,7 +145,13 @@ struct machine_state
   machine_state(std::vector<token> tokens) :
     token_stream { std::move(tokens) },
     curr_token { token_stream.begin() }
-  { }
+  {
+    for (auto it = token_stream.begin(); it != token_stream.end(); ++it) {
+      if (it->kind != tokens::label) continue;
+
+      labels[std::string { it->start + 1, it->end - 1 }] = it;
+    }
+  }
 
   void push(int n)
   {
@@ -363,11 +370,40 @@ struct machine_state
   bool intrinsic(const std::string& id);
 
   std::map<std::string, token_iterator> dictionary;
+  std::map<std::string, token_iterator> labels;
   std::deque<int> dstack;
   std::deque<int> rstack;
   std::vector<token> token_stream;
   token_iterator curr_token;
 };
+
+bool isBranchTargetToken(const token& tok)
+{
+  return tok.kind == tokens::number ||
+         tok.kind == tokens::identifier;
+}
+
+void branch_to_target(machine_state& m, bool do_branch = true)
+{
+  m.next();
+  m.assert(!m.atEnd() || isBranchTargetToken(*m.curr_token))
+    << "branch word without target.";
+  if (!do_branch) {
+    m.next();
+    return;
+  }
+
+  if (m.curr_token->kind == tokens::number) {
+    m.rbranch(strtol(m.curr_token->start, nullptr, 0));
+    return;
+  }
+
+  auto it = m.labels.find(m.curr_token->to_string());
+  m.assert(it != m.labels.end())
+    << "tried to branch to nonexistent label " << *m.curr_token;
+
+  m.curr_token = it->second;
+}
 
 std::map<std::string, void(*)(machine_state&)> intrinsics {
   {
@@ -451,23 +487,13 @@ std::map<std::string, void(*)(machine_state&)> intrinsics {
   {
     "branch",
     [](machine_state& m) {
-      m.next();
-      m.assert(!m.atEnd() && m.curr_token->kind == tokens::number)
-        << "expected number after branch";
-      m.rbranch(strtol(m.curr_token->start, nullptr, 0));
+      branch_to_target(m);
     }
   },
   {
     "?branch",
     [](machine_state& m) {
-      m.next();
-      m.assert(!m.atEnd() && m.curr_token->kind == tokens::number)
-        << "expected number after conditional branch";
-      if (m.pop()) {
-        m.rbranch(strtol(m.curr_token->start, nullptr, 0));
-      } else {
-        m.next();
-      }
+      branch_to_target(m, m.pop() != 0);
     }
   },
 };
@@ -602,6 +628,15 @@ lex_fn token_table[] {
                   << "start-of-definition.";
       }
       m.abranch(rip);
+    }
+  ),
+  lexRegex(
+    tokens::label,
+    R"(\[[^\s]+\])",
+    [](machine_state& m, const token& tok)
+    {
+      m.next();
+      m.labels[std::string { tok.start + 1, tok.end - 1 }] = m.curr_token;
     }
   ),
   lexRegex(

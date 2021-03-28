@@ -1,0 +1,2 @@
+branch foo ."bad\n" [foo] ."good\n"
+branch bar [baz] ."good\n" branch end [bar] branch baz [end]
