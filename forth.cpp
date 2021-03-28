@@ -18,7 +18,6 @@ enum class tokens {
   start_definition,
   end_definition,
   print,
-  operation,
   identifier,
   number,
   string,
@@ -466,6 +465,12 @@ void noop(machine_state& m, const token& tok)
   m.next();
 }
 
+bool isOperation(const char *begin, const char *end)
+{
+  static std::regex opRegex { R"(([-+*/%&|!=]|<>|<(=)?|>(=)?))" };
+  return std::regex_match(begin, end, opRegex);
+}
+
 void interpOperation(machine_state& m, const token& tok)
 {
   if (*tok.start == '!') {
@@ -609,10 +614,32 @@ lex_fn token_table[] {
     }
   ),
   lexRegex(
-    tokens::identifier,
-    R"([A-Za-z_?]+[^\s]*)",
+    tokens::number,
+    R"((-)?(0[xX][0-9a-fA-F]+|0[0-7]*|[1-9][0-9]*))",
     [](machine_state& m, const token& tok)
     {
+      m.push(strtol(tok.start, nullptr, 0));
+      m.next();
+    }
+  ),
+  lexRegex(
+    tokens::string,
+    R"("[^"]*")",
+    [](machine_state& m, const token& tok)
+    {
+      interpString(m, tok.start, tok.end);
+      m.next();
+    }
+  ),
+  lexRegex(
+    tokens::identifier,
+    R"([^\s]+)",
+    [](machine_state& m, const token& tok)
+    {
+      if (isOperation(tok.start, tok.end)) {
+        interpOperation(m, tok);
+        return;
+      }
       auto it = m.dictionary.find(tok.to_string());
       if (it == m.dictionary.end()) {
         if (m.intrinsic(tok.to_string())) {
@@ -626,29 +653,6 @@ lex_fn token_table[] {
       m.curr_token = it->second;
     }
   ),
-  lexRegex(
-    tokens::number,
-    R"((-)?(0[xX][0-9a-fA-F]+|0[0-7]*|[1-9][0-9]*))",
-    [](machine_state& m, const token& tok)
-    {
-      m.push(strtol(tok.start, nullptr, 0));
-      m.next();
-    }
-  ),
-  lexRegex(
-    tokens::operation,
-    R"(([-+*/%&|!=]|<>|<(=)?|>(=)?))",
-    &interpOperation
-  ),
-  lexRegex(
-    tokens::string,
-    R"("[^"]*")",
-    [](machine_state& m, const token& tok)
-    {
-      interpString(m, tok.start, tok.end);
-      m.next();
-    }
-  )
 };
 static_assert(sizeof(token_table) / sizeof(lex_fn) == num_token_kinds);
 
