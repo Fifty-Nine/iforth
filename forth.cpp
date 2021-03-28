@@ -448,6 +448,28 @@ std::map<std::string, void(*)(machine_state&)> intrinsics {
     "then",
     [](machine_state& m) { m.next(); }
   },
+  {
+    "branch",
+    [](machine_state& m) {
+      m.next();
+      m.assert(!m.atEnd() && m.curr_token->kind == tokens::number)
+        << "expected number after branch";
+      m.rbranch(strtol(m.curr_token->start, nullptr, 0));
+    }
+  },
+  {
+    "?branch",
+    [](machine_state& m) {
+      m.next();
+      m.assert(!m.atEnd() && m.curr_token->kind == tokens::number)
+        << "expected number after conditional branch";
+      if (m.pop()) {
+        m.rbranch(strtol(m.curr_token->start, nullptr, 0));
+      } else {
+        m.next();
+      }
+    }
+  },
 };
 
 bool machine_state::intrinsic(const std::string& id)

@@ -1,0 +1,2 @@
+."a" branch 1 ."b" branch 2 ."c" ."d" branch 3 branch 3 branch -3 ."\n"
+5 1 - ."x" dup ?branch -5 0 ."\n"
