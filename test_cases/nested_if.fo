@@ -1,0 +1,12 @@
+: eggsize
+  dup 18 < if ."reject\n"      else
+  dup 21 < if ."small\n"       else
+  dup 24 < if ."medium\n"      else
+  dup 27 < if ."large\n"       else
+  dup 30 < if ."extra large\n" else
+     ."error\n"
+  then then then then then then drop ;
+
+23 eggsize
+29 eggsize
+40 eggsize

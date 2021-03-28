@@ -116,6 +116,29 @@ lex_fn lexRegex(
   };
 }
 
+std::string toLower(std::string s)
+{
+  std::transform(
+    s.begin(), s.end(), s.end(),
+    [](unsigned char c) -> unsigned char
+    {
+      if (c >= 'A' && c <= 'Z') return c - ('A' - 'a');
+      return c;
+    }
+  );
+  return s;
+}
+
+bool isTokenWithId(const std::string& id, const token& tok)
+{
+  if (tok.kind != tokens::identifier) {
+    return false;
+  }
+
+  return toLower(tok.to_string()) == id;
+}
+
+
 struct machine_state
 {
   machine_state(std::vector<token> tokens) :
@@ -212,7 +235,7 @@ struct machine_state
 
   void branch(int n)
   {
-    while (n > 0 && curr_token != token_stream.end()) {
+    while (n > 0 && !atEnd()) {
       ++curr_token;
       --n;
     }
@@ -227,21 +250,55 @@ struct machine_state
     }
   }
 
+  void branch()
+  {
+      next();
+      if (atEnd() || curr_token->kind != tokens::number) {
+        error() << "expected number after branch";
+      }
+      auto n = strtol(curr_token->start, nullptr, 0);
+      branch(n);
+  }
+
+  bool branchTo(std::function<bool(const token&)> pred) {
+    while (!atEnd() && !pred(*curr_token)) { next(); }
+    return !atEnd() && pred(*curr_token);
+  }
+
+  template<class... T>
+  bool branchTo(const char *id, T&&... args)
+  {
+    std::vector<const char*> ids { id, std::forward<T&&>(args)... };
+    return branchTo([ids = std::move(ids)](const token& t) {
+        for (auto id : ids) {
+          if (isTokenWithId(id, t)) {
+            return true;
+          }
+        }
+        return false;
+      }
+    );
+  }
+
+  bool atEnd() const {
+    return curr_token == token_stream.end();
+  }
+
   void next() {
-    if (curr_token != token_stream.end()) {
+    if (!atEnd()) {
       ++curr_token;
     }
   }
 
   int run()
   {
-    while (curr_token != token_stream.end()) {
+    while (!atEnd()) {
       curr_token->interpret(*this, *curr_token);
     }
     return dstack.empty() ? 0 : dstack.back();
   }
 
-  bool intrinsic(std::string id);
+  bool intrinsic(const std::string& id);
 
   std::map<std::string, token_iterator> dictionary;
   std::deque<int> dstack;
@@ -305,19 +362,35 @@ std::map<std::string, void(*)(machine_state&)> intrinsics {
       m.next();
     }
   },
+  {
+    "if",
+    [](machine_state& m) {
+      if (!m.pop()) {
+        if (!m.branchTo("else", "then")) {
+          m.error() << "'if' with no corresponding 'then'";
+        }
+      }
+      m.next();
+    }
+  },
+  {
+    "else",
+    [](machine_state& m) {
+      if (!m.branchTo("then")) {
+        m.error() << "'else' with no corresponding 'then'";
+      }
+      m.next();
+    }
+  },
+  {
+    "then",
+    [](machine_state& m) { m.next(); }
+  },
 };
 
-bool machine_state::intrinsic(std::string id)
+bool machine_state::intrinsic(const std::string& id)
 {
-  std::transform(
-    id.begin(), id.end(), id.end(),
-    [](unsigned char c) -> unsigned char
-    {
-      if (c >= 'A' && c <= 'Z') return c - ('A' - 'a');
-      return c;
-    }
-  );
-  auto it = intrinsics.find(id);
+  auto it = intrinsics.find(toLower(id));
   if (it != intrinsics.end()) {
     it->second(*this);
     return true;
@@ -387,16 +460,14 @@ lex_fn token_table[] {
     [](machine_state& m, const token& tok)
     {
       m.next();
-      if (m.curr_token == m.token_stream.end()
-          || m.curr_token->kind != tokens::identifier) {
+      if (m.atEnd() || m.curr_token->kind != tokens::identifier) {
         m.error() << "expecting identifier";
       }
       std::string id { m.curr_token->start, m.curr_token->end };
       m.next();
       auto start = m.curr_token;
 
-      while (m.curr_token != m.token_stream.end() &&
-             m.curr_token->kind != tokens::end_definition) {
+      while (!m.atEnd() && m.curr_token->kind != tokens::end_definition) {
         m.next();
       }
 

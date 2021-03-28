@@ -1,0 +1,4 @@
+1 if "good\n" else "bad\n" then .s clear
+0 if "bad\n" else "good\n" then .s clear
+1 if "good\n" then .s clear
+"good\n" 0 if "bad\n" then .s clear
