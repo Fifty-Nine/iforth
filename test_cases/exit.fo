@@ -1,0 +1,2 @@
+: fn ."good\n" exit ."bad\n" ;
+fn

@@ -198,7 +198,7 @@ struct machine_state
         ss << "\n";
         m->debug(ss);
         std::cerr << ss.str() << std::endl;
-        exit(1);
+        ::exit(1);
       }
     }
 
@@ -364,6 +364,18 @@ struct machine_state
   }
 
   void next() { rbranch(1); }
+
+  void exit() {
+    int rip;
+    if (!rpop(rip)) {
+      error() << "tried to exit from a subroutine with an "
+              << "empty return stack.";
+    } else if (rip < 0 || rip > end_addr()) {
+      error() << "exit from subroutine to invalid address ("
+              << rip << ")";
+    }
+    abranch(rip);
+  }
 
   int run()
   {
@@ -544,6 +556,12 @@ std::map<std::string, void(*)(machine_state&)> intrinsics {
       m.next();
     }
   },
+  {
+    "exit",
+    [](machine_state& m) {
+      m.exit();
+    }
+  },
 };
 
 bool machine_state::intrinsic(const std::string& id)
@@ -674,12 +692,7 @@ lex_fn token_table[] {
     ';',
     [](machine_state& m, const token& tok)
     {
-      int rip;
-      if (!m.rpop(rip)) {
-        m.error() << "encountered end-of-definition with no corresponding "
-                  << "start-of-definition.";
-      }
-      m.abranch(rip);
+      m.exit();
     }
   ),
   lexRegex(
