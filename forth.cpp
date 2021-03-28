@@ -584,7 +584,7 @@ lex_fn token_table[] {
   ),
   lexRegex(
     tokens::print,
-    R"(\.([sd]|"[^"]*")?)",
+    R"(\.([cds]|"[^"]*")?)",
     [](machine_state& m, const token& tok)
     {
       if ((tok.end - tok.start) > 1) {
@@ -592,6 +592,10 @@ lex_fn token_table[] {
           interpString(m, tok.start + 1, tok.end);
         } else if (*(tok.start + 1) == 'd') {
           m.debug(std::cout);
+          m.next();
+          return;
+        } else if (*(tok.start + 1) == 'c') {
+          std::cout << (char)m.pop() << std::flush;
           m.next();
           return;
         }
