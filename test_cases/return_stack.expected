@@ -1,0 +1,48 @@
+========= machine state =========
+token stream:
+0:[1] 1:[>r] 2:[.d] 3:[rclear] 4:[2] 5:[>r] 6:[r>] 7:[.d] 8:[clear] 9:[3] 10:[>r] 11:[r@] 12:[.d] 13:[clear] 14:[rclear] 15:[4] 16:[>r] 17:[rdrop] 18:[.d] 
+
+data stack:
+[]
+
+return stack:
+[0:1]
+
+ip: 2 (.d)
+=================================
+========= machine state =========
+token stream:
+0:[1] 1:[>r] 2:[.d] 3:[rclear] 4:[2] 5:[>r] 6:[r>] 7:[.d] 8:[clear] 9:[3] 10:[>r] 11:[r@] 12:[.d] 13:[clear] 14:[rclear] 15:[4] 16:[>r] 17:[rdrop] 18:[.d] 
+
+data stack:
+[0:2]
+
+return stack:
+[]
+
+ip: 7 (.d)
+=================================
+========= machine state =========
+token stream:
+0:[1] 1:[>r] 2:[.d] 3:[rclear] 4:[2] 5:[>r] 6:[r>] 7:[.d] 8:[clear] 9:[3] 10:[>r] 11:[r@] 12:[.d] 13:[clear] 14:[rclear] 15:[4] 16:[>r] 17:[rdrop] 18:[.d] 
+
+data stack:
+[0:3]
+
+return stack:
+[0:3]
+
+ip: 12 (.d)
+=================================
+========= machine state =========
+token stream:
+0:[1] 1:[>r] 2:[.d] 3:[rclear] 4:[2] 5:[>r] 6:[r>] 7:[.d] 8:[clear] 9:[3] 10:[>r] 11:[r@] 12:[.d] 13:[clear] 14:[rclear] 15:[4] 16:[>r] 17:[rdrop] 18:[.d] 
+
+data stack:
+[]
+
+return stack:
+[]
+
+ip: 18 (.d)
+=================================

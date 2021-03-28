@@ -323,6 +323,14 @@ struct machine_state
     return dstack.back();
   }
 
+  int rtop()
+  {
+    if (rstack.empty()) {
+      error() << "tried to peek empty return stack";
+    }
+    return rstack.back();
+  }
+
   void rbranch(int off)
   {
     curr_token = rel_inst(off);
@@ -494,6 +502,41 @@ std::map<std::string, void(*)(machine_state&)> intrinsics {
     "?branch",
     [](machine_state& m) {
       branch_to_target(m, m.pop() != 0);
+    }
+  },
+  {
+    ">r",
+    [](machine_state& m) {
+      m.rpush(m.pop());
+      m.next();
+    }
+  },
+  {
+    "r>",
+    [](machine_state& m) {
+      m.push(m.rpop());
+      m.next();
+    }
+  },
+  {
+    "r@",
+    [](machine_state& m) {
+      m.push(m.rtop());
+      m.next();
+    }
+  },
+  {
+    "rdrop",
+    [](machine_state& m) {
+      m.rpop();
+      m.next();
+    }
+  },
+  {
+    "rclear",
+    [](machine_state& m) {
+      m.rstack.clear();
+      m.next();
     }
   },
 };

@@ -1,0 +1,4 @@
+1 >r .d rclear
+2 >r r> .d clear
+3 >r r@ .d clear rclear
+4 >r rdrop .d

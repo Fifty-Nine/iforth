@@ -1,0 +1,6 @@
+: rev
+  -1
+  1 + swap >r r@ ?branch -6
+  rdrop 0 swap dup ! ?branch 7 r> .c 1 - branch -9 drop ;
+: cr 0xa .c ;
+."abcd " "abcd" rev .s cr
