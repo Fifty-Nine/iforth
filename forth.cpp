@@ -22,7 +22,8 @@ enum class tokens {
   number,
   string,
   label,
-  last_token = label,
+  comment,
+  last_token = comment,
 };
 using token_kind = tokens;
 constexpr size_t num_token_kinds = (size_t)tokens::last_token + 1;
@@ -635,6 +636,10 @@ void interpString(machine_state& m, const char *start, const char *end)
 }
 
 lex_fn token_table[] {
+  lexRegex(
+    tokens::comment,
+    R"(\([^\)]*\))"
+  ),
   lexChar(
     tokens::start_definition,
     ':',

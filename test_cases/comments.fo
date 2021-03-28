@@ -1,0 +1,3 @@
+."test (not a) comment\n"
+(but every thing here is definitely a comment ."bad")
+(this is a comment) ."not a comment\n" (also a comment)
