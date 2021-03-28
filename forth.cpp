@@ -540,6 +540,13 @@ std::map<std::string, void(*)(machine_state&)> intrinsics {
       m.next();
     }
   },
+  {
+    "cr",
+    [](machine_state& m) {
+      std::cout << std::endl;
+      m.next();
+    }
+  },
 };
 
 bool machine_state::intrinsic(const std::string& id)
