@@ -175,15 +175,18 @@ struct machine_state
 
   struct error_state
   {
-    error_state(const machine_state& m) : m { m } { }
+    error_state() : m { nullptr } { }
+    error_state(const machine_state& m) : m { &m } { }
     error_state(error_state&& es) : m { es.m }, ss { std::move(es.ss) } { }
     ~error_state() {
-      m.debug(ss);
-      std::cerr << ss.str() << std::endl;
-      exit(1);
+      if (m) {
+        m->debug(ss);
+        std::cerr << ss.str() << std::endl;
+        exit(1);
+      }
     }
 
-    const machine_state& m;
+    const machine_state *m;
     std::stringstream ss;
 
     template<class T>
@@ -204,6 +207,16 @@ struct machine_state
     error_state es { *this };
     es << "error interpreting token " << *curr_token << ": ";
     return es;
+  }
+
+  error_state assert(bool val) const
+  {
+    if (!val) {
+      error_state es { *this };
+      es << "assertion while interpreting token " << *curr_token << ": ";
+      return es;
+    }
+    return error_state { };
   }
 
   int pop()
@@ -420,8 +433,30 @@ void interpOperation(machine_state& m, const token& tok)
     case '%': m.push(l % r); break;
     case '&': m.push(l && r); break;
     case '|': m.push(l || r); break;
-    case '<': m.push(l < r); break;
-    case '>': m.push(l > r); break;
+    case '<': {
+        if (tok.end == tok.start + 1) {
+          m.push(l < r);
+        } else {
+          if (*(tok.start + 1) == '=') {
+            m.push(l <= r);
+          } else if (*(tok.start + 1) == '>') {
+            m.push(l != r);
+          } else {
+            m.error() << "malformed binary operator beginning with '<'";
+          }
+        }
+      }
+      break;
+    case '>': {
+        if (tok.end == tok.start + 1) {
+          m.push(l > r);
+        } else {
+          m.assert(*(tok.start + 1) == '=')
+            << "malformed binary operator beginning with '>'";
+          m.push(l >= r);
+        }
+      }
+      break;
     case '=': m.push(l == r); break;
     }
   }
@@ -548,7 +583,7 @@ lex_fn token_table[] {
   ),
   lexRegex(
     tokens::operation,
-    R"([-+*/%&|!<>=])",
+    R"(([-+*/%&|!=]|<>|<(=)?|>(=)?))",
     &interpOperation
   ),
   lexRegex(
