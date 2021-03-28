@@ -22,9 +22,10 @@ enum class tokens {
   identifier,
   number,
   string,
-  last_token = number
+  last_token = string
 };
 using token_kind = tokens;
+constexpr size_t num_token_kinds = (size_t)tokens::last_token + 1;
 
 struct machine_state;
 struct token;
@@ -596,6 +597,7 @@ lex_fn token_table[] {
     }
   )
 };
+static_assert(sizeof(token_table) / sizeof(lex_fn) == num_token_kinds);
 
 const char *skipWs(const char *c, const char *end)
 {
