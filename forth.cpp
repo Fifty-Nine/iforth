@@ -1,3 +1,7 @@
+const char *forth = R"(
+."hello world" cr
+)";
+/* ==== interpreter implementation ==== */
 #include <cctype>
 #include <cstdlib>
 #include <functional>
@@ -6,13 +10,6 @@
 #include <regex>
 #include <string>
 #include <unistd.h>
-
-std::string forthString = R"(
-  : FIB 2 < IF ELSE 1 - DUP 1 - THEN ;
-  : HELLO "hello world\n" .s ;
-  HELLO 1 2 + .
-)";
-
 
 enum class tokens {
   start_definition,
@@ -834,7 +831,7 @@ int main(int argc, char *const argv[])
       }
     }
   } else {
-    text = forthString;
+    text = forth;
   }
   machine_state m {
     lexTokens(text.data(), text.data() + text.size())
