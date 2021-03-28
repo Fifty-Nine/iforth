@@ -157,8 +157,9 @@ struct machine_state
     out << "[";
     for (size_t i = 0; i < s.size(); ++i) {
       auto idx = s.size() - i - 1;
-      out << idx << ":" << s[i] << (idx == 0 ? "]\n" : " ");
+      out << idx << ":" << s[i] << (idx == 0 ? "" : " ");
     }
+    out << "]\n";
   }
 
   void debug(std::ostream& out) const
@@ -183,9 +184,14 @@ struct machine_state
   {
     error_state() : m { nullptr } { }
     error_state(const machine_state& m) : m { &m } { }
-    error_state(error_state&& es) : m { es.m }, ss { std::move(es.ss) } { }
+    error_state(error_state&& es) :
+      m { es.m }, ss { std::move(es.ss) }
+    {
+      es.m = nullptr;
+    }
     ~error_state() {
       if (m) {
+        ss << "\n";
         m->debug(ss);
         std::cerr << ss.str() << std::endl;
         exit(1);

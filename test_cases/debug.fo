@@ -1,3 +1,5 @@
 : foo 1 2 3 .d ;
 : bar foo drop .d ;
 foo bar 0
+clear
+.d
