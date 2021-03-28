@@ -1,0 +1,101 @@
+===================================================================
+                     iForth Quick Reference
+===================================================================
+
+Basics
+===================================================================
+(...) ( -- )         A comment.
+123   ( -- 123 )     Push a number onto the data stack.
+*     ( a b -- a*b ) Perform an operation on the top of the stack.
+                     Most operations pop the first two items and
+                     push the result, except for '!' which is a unary
+                     operation. The full set of operators is:
+                     + - * / % & | ! = <> < <= > >=
+                     For non-symmetrical operations, the top of the stack
+                     is the second operand, e.g.: "2 1 -" will push
+                     a value of 1 onto the stack.
+
+.     ( a -- )       Pop the top of the stack and print the value
+                     as an integer (e.g. "65").
+
+.c    ( a -- )       Pop the top of the stack and print the value
+                     as a character (e.g. "A").
+
+."string" ( -- )     Print the given string literal to the output.
+"a"       ( -- 0 a ) Push a null-terminated string onto the stack.
+.s        ( 0 a -- ) Pop and print a null-terminated string from the
+                     top of the stack.
+
+cr        ( -- )     Print a newline.
+.d                   Print the complete machine state.
+
+
+Subroutines ("words")
+===================================================================
+: foo 1 + ; ( -- ) Define a new subroutine named 'foo'. This example
+                   adds 1 to the number on the top of the stack.
+
+foo ( -- R:foo+1 ) Call the subroutine named 'foo'. The address of
+                   the next instruction is pushed onto the return
+                   stack.
+
+exi     (R:ra -- ) Pop the return stack and jump to the address. Note
+                   that subroutines implicitly do this when the end
+                   of the subroutine is reached.
+
+
+Stack manipulation words
+===================================================================
+dup   (a -- a a)       Duplicate the top of the stack.
+swap  (a b -- b a)     Swap the position of the two items at the top of
+                       the stack.
+
+over  (a b -- a b a)   Duplicate the item one position below the top of
+                       the stack.
+
+rot   (a b c -- b c a) Rotate the positions of the top three items on the
+                       stack.
+
+drop  (a -- )          Discard the top of the stack.
+
+
+Return stack manipulation
+===================================================================
+>r (w -- R:w)      Move an item from the data stack to the return stack.
+r> (R:w -- w)      Move an item from the return stack to the data stack.
+r@ (R:w -- w R:w ) Duplicate the item on the return stack to the data
+                   stack.
+
+rdrop (R:w -- )    Drop the item at the top of the return stack.
+
+
+Flow control
+===================================================================
+[label]       ( -- )   Label an address. This is a separate namespace
+                       from words/subroutines. Labels are processed
+                       before any code is executed and are no-ops when
+                       encountered by the interpreter in normal operation.
+
+branch 2      ( -- )   Branch relative to the current instruction. The
+                       offset may be negative for backwards jumps.
+
+branch label  ( -- )   Branch to the label named 'label'.
+
+?branch 2     ( c -- ) Pop a value from the stack. If it is nonzero, branch
+                       to the identified offset like 'branch'. Otherwise,
+                       continue immediately to the next instruction.
+
+?branch label ( c -- ) Pop a value from the stack. If it is nonzero, branch
+                       to the identified label like 'branch'. Otherwise,
+                       continue immediately to the next instruction.
+
+if [true]
+else [false]
+then          ( c -- ) Pop a value from the stack. If the value is nonzero,
+                       execute 'true' and proceed from 'then'.
+                       Otherwise, branch to 'false'.
+
+if [true]
+then          ( c -- ) Pop a value from the stack. If the value is nonzero,
+                       branch to 'true' and proceed from 'then'. Otherwise,
+                       proceed directly to 'then'.
