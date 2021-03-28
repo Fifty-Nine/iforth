@@ -482,7 +482,23 @@ std::map<std::string, void(*)(machine_state&)> intrinsics {
     "if",
     [](machine_state& m) {
       if (!m.pop()) {
-        if (!m.branchTo("else", "then")) {
+        m.next();
+        int counter = 0;
+        auto pred = [&counter](const token& tok) {
+          if (counter == 0 &&
+            (isTokenWithId("else", tok) || isTokenWithId("then", tok))) {
+            return true;
+          }
+
+          if (isTokenWithId("if", tok)) {
+            ++counter;
+          }
+          if (counter && isTokenWithId("then", tok)) {
+            --counter;
+          }
+          return false;
+        };
+        if (!m.branchTo(pred)) {
           m.error() << "'if' with no corresponding 'then'";
         }
       }
@@ -492,7 +508,21 @@ std::map<std::string, void(*)(machine_state&)> intrinsics {
   {
     "else",
     [](machine_state& m) {
-      if (!m.branchTo("then")) {
+      int counter = 0;
+      m.next();
+      auto pred = [&counter](const token& tok) {
+        if (counter == 0 && isTokenWithId("then", tok)) {
+          return true;
+        }
+        if (isTokenWithId("if", tok)) {
+          ++counter;
+        }
+        if (isTokenWithId("then", tok)) {
+          --counter;
+        }
+        return false;
+      };
+      if (!m.branchTo(pred)) {
         m.error() << "'else' with no corresponding 'then'";
       }
       m.next();
