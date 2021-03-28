@@ -1,5 +1,10 @@
+default: tests
+
 forth: forth.cpp
 	g++ -g -Wall -Werror -std=gnu++14 -o forth forth.cpp
+
+clean:
+	rm -f *.o forth test_cases/*.actual
 
 paste:
 	sed -rf pastescript.sed forth.cpp
