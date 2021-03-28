@@ -1,0 +1,41 @@
+: fibrec dup 2 < ?branch fibend dup 1 - fibrec swap 2 - fibrec + [fibend] ;
+: fibif dup 2 < if else dup 1 - fibif swap 2 - fibif + then ;
+: 2dup over over ;
+: fibloop
+	dup 2 >= if
+		1 - >r 0 1 r@ [loop]
+		if
+			dup
+			rot
+			+
+			r>
+			1
+			-
+			>r
+			r@
+			branch loop
+		else (we're done)
+			rdrop
+			swap
+			drop
+			exit
+		then
+	then ;
+
+0 fibrec .
+1 fibrec .
+2 fibrec .
+3 fibrec .
+10 fibrec .
+
+0 fibif .
+1 fibif .
+2 fibif .
+3 fibif .
+10 fibif .
+
+0 fibloop .
+1 fibloop .
+2 fibloop .
+3 fibloop .
+10 fibloop .
